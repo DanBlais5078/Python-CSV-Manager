@@ -1,3 +1,14 @@
+#Note on code reference: The CodersLegacy reference was loosely followed to learn how to make treeview cells editable.
+#All code in the tutorial was rewritten and modified for this program to fit in an MVC architecture.
+
+#Images
+#Search icon by Icons8, Close icon by Icons8, 1 icon by Icons8
+
+#Code References
+#[1] Siddiqi, "How to Make Ttk Treeview Editable in Python," CodersLegacy, 2023. [Online]. 
+#            Available: https://coderslegacy.com/how-to-make-ttk-treeview-editable-python/. [Accessed: 24-Sep-2024].
+#[2] "Tkinter Documentation," TkDocs, [Online]. Available: https://tkdocs.com/index.html. [Accessed: 25-Sep-2024].
+
 import KeystonePipelineData as model
 import AppWindow as view
 import tkinter as tk
@@ -6,43 +17,84 @@ import csv
 from datetime import datetime
 
 class WindowController:
+    '''
+    The WindowController class manages the interaction between the view and model
+    for the pipeline data application. It handles file operations, data parsing,
+    and user interactions with the graphical user interface.
+
+    :attribute _view: An instance of the ProgramWindow class that represents the GUI.
+    :attribute _highestId: An integer tracking the highest ID used for new rows.
+    :attribute _searchOpen: A boolean indicating if the search box is open.
+    :attribute _searchButtonToggle: A boolean indicating the state of the search button.
+    :attribute _model: A list of PipelineData objects representing the parsed data.
+    :attribute _file: A string representing the path of the currently opened file.
+    '''
     
     def __init__(self):
+        '''
+        Initializes the WindowController, setting up the view and initializing attributes.
+        '''
         self._view = view.ProgramWindow(self.openFile, self.addData, self.editData, self.deleteData, 
                                           self.searchTable, self.showHideSearchBox, self.toggleButton, 
                                           self.openContextMenu, self.openTextInput, self.reloadDataFromFile,
-                                          self.saveFile, self.saveFileAs, self.resizeSearchBox)
+                                          self.saveFile, self.saveFileAs, self.resizeSearchBox, self.openRowDetails)
         self._highestId = 0
         self._searchOpen = False
         self._searchButtonToggle = False
         
     @property
     def model(self):
+        '''
+        Gets the current model.
+
+        :returns: The current model.
+        '''
         return self._model
     
     @model.setter
     def model(self, newModel):
+        '''
+        Sets the model to a new value.
+
+        :param newModel: The new model to set.
+        '''
         self._model = newModel
         
     @model.deleter
     def model(self):
+        '''
+        Deletes the current model.
+        '''
         del self._model
         
     @property
     def view(self):
+        '''
+        Gets the current view.
+
+        :returns: The current view.
+        '''
         return self._view
     
     @view.setter
     def view(self, newView):
+        '''
+        Sets the view to a new value.
+
+        :param newView: The new view to set.
+        '''
         self._view = newView
         
     @view.deleter
     def view(self):
+        '''
+        Deletes the current view.
+        '''
         del self._view    
     
     def parseCSV(self, file):
         '''
-        This method will parse a csv file row by row into a list by creating objects that represent each row, and then appending
+        Parses a csv file row by row into a list by creating objects that represent each row, and then appending
         them to the list. Also validates date and numeric row attributes prior to creating objects.
    
         :param file: A string representing the path of the file.
@@ -51,13 +103,10 @@ class WindowController:
         pipelineDataList = []
    
         try: 
-       
-            #Open csv file and create a reader object to parse it. Skip first line.
             with open(file, newline='') as dataset:
                 dataReader = csv.reader(dataset, delimiter=",", quotechar='"')
                 next(dataReader)
             
-                #Iterate through csv rows stored in dataReader.
                 for row in dataReader: 
                     
                     try:
@@ -72,7 +121,6 @@ class WindowController:
                         nameplateCapacity = float(row[14]) if row[14] else ""
                         availableCapacity = float(row[15]) if row[15] else ""
                     
-                        #Create PipelineData object based on current row of csv.
                         pipeData = model.PipelineData(date=date, month=month, 
                                         year=year, company=row[3], pipeline=row[4], 
                                         keyPoint=row[5], latitude=latitude, longitude=longitude, 
@@ -86,13 +134,18 @@ class WindowController:
                     except Exception as e: 
                         print(f"Error: {e}") 
                         
-        #Catch program exceptions and print the exception to the console.
         except Exception as e: 
            print(f"Error: {e}") 
        
         self._model = pipelineDataList
         
     def loadData(self, rowStart, rowEnd):
+        '''
+        Loads a range of data into the view table from the model.
+
+        :param rowStart: The starting index of the rows to load.
+        :param rowEnd: The ending index of the rows to load.
+        '''
         for index, pipelineDataRow in enumerate(it.islice(self._model, rowStart, rowEnd, 1)):
             self._view.table.insert("", "end", str(index), text=str(index), 
                                     values=(pipelineDataRow.date, pipelineDataRow.month, pipelineDataRow.year,
@@ -104,6 +157,9 @@ class WindowController:
             self._highestId += 1
     
     def searchTable(self):
+        '''
+        Searches the table based on the input in the search box and the toggled search mode.
+        '''
         searchQuery = self._view.searchBox.get().lower()
 
         if self._searchButtonToggle == False:
@@ -129,6 +185,13 @@ class WindowController:
                     self._view.table.item(value, tags=())
         
     def editData(self, event, rowId, columnIndex):
+        '''
+        Edits a cell value in the table and updates the model accordingly.
+
+        :param event: The event triggering the edit.
+        :param rowId: The ID of the row being edited.
+        :param columnIndex: The index of the column being edited.
+        '''
         index = self._view.table.index(self._view.table.selection()[0])  
         vals = self._view.table.item(rowId, 'values') 
         vals = list(vals) 
@@ -172,11 +235,13 @@ class WindowController:
             self._model[row].availableCapacity = value;
         elif columnIndex == 16:
             self._model[row].reasonForVariance = value;
-    
-        #Debugging, remove later
-        print(f"\n{self._model[row]}\nRow ID: {rowId}\nArray Index: {row}")
 
     def addData(self, position):
+        '''
+        Adds a new row of data to the table and model.
+
+        :param position: A string indicating whether to add the row 'above' or 'below' the selected row.
+        '''
         index = self._view.table.index(self._view.table.selection()[0])
         pipeData = model.PipelineData(date="", month="", year="", company="", pipeline="",  keyPoint="", latitude="", 
                                       longitude="", directionOfFlow="", tradeType="", product="", throughput="", 
@@ -195,11 +260,18 @@ class WindowController:
         self._highestId += 1
 
     def deleteData(self):
+        '''
+        Deletes the selected row from the table and model.
+        '''
         rowId = int(self._view.table.selection()[0])
-        self._model.pop(rowId)
+        index = self._view.table.index(self._view.table.selection()[0])
+        self._model.pop(index)
         self._view.table.delete(rowId)
         
     def reloadDataFromFile(self):
+        '''
+        Reloads data from the currently selected CSV file, clearing the in memory data and replacing it with data from the file.
+        '''
         if hasattr(self, "_file"):
             self._highestId = 0
             self._model.clear()
@@ -211,6 +283,9 @@ class WindowController:
             self.loadData(0, 100)
         
     def openFile(self):
+        '''
+        Opens a CSV file and loads its data into the view.
+        '''
         self._file = tk.filedialog.askopenfilename(title="Open Pipeline Data", filetypes=[('CSV Files', '*.csv')])
         
         if not self._file:
@@ -225,8 +300,10 @@ class WindowController:
         self._view.fileMenu.entryconfig(3, state=tk.NORMAL)
         self._view.dataMenu.entryconfig(0, state=tk.NORMAL)
     
-    #test this
     def saveFile(self):
+        '''
+        Saves the current model data to the opened CSV file.
+        '''
         if self._file:
             with open(self._file, 'w', newline='') as saveFile:
                 dataWriter = csv.writer(saveFile, quoting=csv.QUOTE_MINIMAL)
@@ -247,6 +324,9 @@ class WindowController:
                                          self._model[row].reasonForVariance])
 
     def saveFileAs(self):
+        '''
+        Opens a dialog to save the current model data to a new CSV file.
+        '''
         self._saveFile = tk.filedialog.asksaveasfilename(title="Save File As...", defaultextension=".csv", filetypes=[('CSV Files', '*.csv')])
         
         if self._saveFile:
@@ -269,6 +349,9 @@ class WindowController:
                                          self._model[row].reasonForVariance])
         
     def showHideSearchBox(self):
+        '''
+        Toggles the visibility of the search box.
+        '''
         if hasattr(self._view, "table"):
             if not self._searchOpen:
                 self._searchOpen = True
@@ -279,6 +362,9 @@ class WindowController:
                 self._view.searchFrame.place_forget()
                       
     def toggleButton(self):
+        '''
+        Toggles the search button state and resets the search box.
+        '''
         if self._searchButtonToggle:
             self._view.searchButton.config(image=self._view.searchImg)
             self._searchButtonToggle = False
@@ -292,6 +378,11 @@ class WindowController:
                     self._view.table.item(value, tags=())
 
     def openContextMenu(self, event):
+        '''
+        Opens a context menu on a selected row of the table.
+
+        :param event: The event triggering the context menu popup.
+        '''
         try: 
             if self._view.textInput:
                 self._view.textInput.destroy()
@@ -311,36 +402,49 @@ class WindowController:
             self._view.contextMenu.grab_release()
             
     def openTextInput(self, event):
-            try: 
-                if self._view.textInput:
-                    self._view.textInput.destroy()
-            except AttributeError:
-                pass
+        '''
+        Opens a text input field for editing the selected cell in the table.
 
-            rowId = self._view.table.identify_row(event.y)
-            column = self._view.table.identify_column(event.x)
+        :param event: The event triggering the text input.
+        '''    
+        try: 
+            if self._view.textInput:
+                self._view.textInput.destroy()
+        except AttributeError:
+            pass
 
-            if not rowId or column == "#0":
-                return
+        rowId = self._view.table.identify_row(event.y)
+        column = self._view.table.identify_column(event.x)
 
-            x, y, width, height = self._view.table.bbox(rowId, column)
-            pady = height // 2
-            text = self._view.table.item(rowId, 'values')[int(column[1:])-1]
-            self._view.buildTextEditBox(rowId, int(column[1:])-1, text)
-            self._view.textInput.place(x=x, y=y+pady, width=width, height=height - 2, anchor='w')
+        if not rowId or column == "#0":
+            return
+
+        x, y, width, height = self._view.table.bbox(rowId, column)
+        pady = height // 2
+        text = self._view.table.item(rowId, 'values')[int(column[1:])-1]
+        self._view.buildTextEditBox(rowId, int(column[1:])-1, text)
+        self._view.textInput.place(x=x, y=y+pady, width=width, height=height - 2, anchor='w')
             
     def resizeSearchBox(self):
+        '''
+        Resizes the search box based on the current window width.
+        '''
         if hasattr(self._view, "table"):
             if self._searchOpen:
                 rootWidth = self._view.root.winfo_width()
 
                 searchWidth = int(rootWidth * 0.30)
                 self._view.searchFrame.place(x=rootWidth - searchWidth - 17, y=2, width=searchWidth)
-
-    def mainloop(self):
-        self._view.root.mainloop()
+                
+    def openRowDetails(self):
+        '''
+        Opens a detail view for the currently selected row.
+        '''
+        rowId = int(self._view.table.selection()[0])
+        index = self._view.table.index(self._view.table.selection()[0])
+        self._view.buildInfoBox(f"Details For Row: {rowId}", self._model[index])
         
 if __name__ == "__main__":
     control = WindowController()
-    control.mainloop()
+    control._view.root.mainloop()
              

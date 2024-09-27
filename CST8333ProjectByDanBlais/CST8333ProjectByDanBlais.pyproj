@@ -23,6 +23,7 @@
   <ItemGroup>
     <Compile Include="KeystonePipelineData.py" />
     <Compile Include="AppWindow.py" />
+    <Compile Include="test_WindowController.py" />
     <Compile Include="WindowController.py" />
   </ItemGroup>
   <ItemGroup>
