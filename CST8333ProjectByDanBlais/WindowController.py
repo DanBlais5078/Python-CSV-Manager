@@ -1,18 +1,17 @@
-from email.policy import default
 import KeystonePipelineData as model
-import AppWindow as window
-import csv
-import itertools as it
-from datetime import datetime
+import AppWindow as view
 import tkinter as tk
+import itertools as it
+import csv
+from datetime import datetime
 
 class WindowController:
     
     def __init__(self):
-        self._view = window.ProgramWindow(self.openFile, self.addData, self.editData, self.deleteData, 
+        self._view = view.ProgramWindow(self.openFile, self.addData, self.editData, self.deleteData, 
                                           self.searchTable, self.showHideSearchBox, self.toggleButton, 
                                           self.openContextMenu, self.openTextInput, self.reloadDataFromFile,
-                                          self.saveFile, self.saveFileAs)
+                                          self.saveFile, self.saveFileAs, self.resizeSearchBox)
         self._highestId = 0
         self._searchOpen = False
         self._searchButtonToggle = False
@@ -272,13 +271,13 @@ class WindowController:
     def showHideSearchBox(self):
         if hasattr(self._view, "table"):
             if not self._searchOpen:
-                self._view.searchFrame.place(relx=0.979, y=2, anchor='ne', width=self._view.root.winfo_width() * 0.3)
                 self._searchOpen = True
+                self.resizeSearchBox()
             else:
                 self._searchOpen = False
                 self._view.searchBox.delete(0, "end")
                 self._view.searchFrame.place_forget()
-                
+                      
     def toggleButton(self):
         if self._searchButtonToggle:
             self._view.searchButton.config(image=self._view.searchImg)
@@ -329,6 +328,14 @@ class WindowController:
             text = self._view.table.item(rowId, 'values')[int(column[1:])-1]
             self._view.buildTextEditBox(rowId, int(column[1:])-1, text)
             self._view.textInput.place(x=x, y=y+pady, width=width, height=height - 2, anchor='w')
+            
+    def resizeSearchBox(self):
+        if hasattr(self._view, "table"):
+            if self._searchOpen:
+                rootWidth = self._view.root.winfo_width()
+
+                searchWidth = int(rootWidth * 0.30)
+                self._view.searchFrame.place(x=rootWidth - searchWidth - 17, y=2, width=searchWidth)
 
     def mainloop(self):
         self._view.root.mainloop()

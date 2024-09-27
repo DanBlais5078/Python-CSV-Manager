@@ -12,7 +12,8 @@ from tkinter import PhotoImage, ttk, Menu, filedialog
 class ProgramWindow:
     def __init__(self, fileOpenCallback, addDataCallback, editDataCallback, deleteRowCallback, 
                  searchTableCallback, showSearchCallback, toggleButtonCallback, openContextMenuCallback,
-                 openTextInputCallback, reloadDataFromFileCallback, saveFileCallback, saveFileAsCallback):
+                 openTextInputCallback, reloadDataFromFileCallback, saveFileCallback, saveFileAsCallback,
+                 resizeSearchBoxCallback):
         super().__init__()
         self._fileOpenCallback = fileOpenCallback
         self._addDataCallback = addDataCallback
@@ -26,6 +27,7 @@ class ProgramWindow:
         self._reloadDataFromFileCallback = reloadDataFromFileCallback
         self._saveFileCallback = saveFileCallback
         self._saveFileAsCallback = saveFileAsCallback
+        self._resizeSearchBoxCallback = resizeSearchBoxCallback
         
         self.setupWindow()
 
@@ -42,7 +44,7 @@ class ProgramWindow:
         self.root.config(menu=self.appBar)
         
         self.startLabel = tk.Label(self.root, text="No .csv sheet open.\nFile > New to create a new sheet. (Not Implemented yet)\n"
-                                                   "File > Open to open an existing .csv file.")
+                                                   "File > Open to open an existing .csv file.") 
         self.startLabel.pack(expand=True)
         
         self.searchImg = PhotoImage(file="res/search.png").subsample(4)
@@ -76,12 +78,26 @@ class ProgramWindow:
         
     def buildHelpMenu(self, appBar):
         self.helpMenu = Menu(appBar, tearoff=0)
-        self.helpMenu.add_command(label='Program Hotkeys', command=lambda: self.buildInfoBox("Program Hotkeys", "Double-click: Double-click on cell to edit.\nEnter: " 
-                                                                                             "While cell edit is open to save changes.\nEscape: While cell edit open" 
-                                                                                             "to cancel edit\nRight-click: On a row to open context menu.\nCtrl+f: To search," 
-                                                                                             "click the search icon to toggle between find first and find all mode.\nCtrl+r: "
-                                                                                             "To reload data from file.\nCtrl+s: To save and overwrite file."))
-        self.helpMenu.add_command(label='Usage Guide', command=lambda: self.buildInfoBox("Usage Guide", "This program allows for the creation of new .csv files (unimplemented), and the management of existing .csv files.\nTo begin, open an existing .csv file by selecting File > Open.\nAfter selecting a file, a table containing the contents of the file will open.\n"))
+        self.helpMenu.add_command(label='Program Hotkeys', command=lambda: self.buildInfoBox("Program Hotkeys", "Double-click: Double-click on cell to edit.\n\nEnter: " 
+                                                                                             "While cell edit is open to save changes.\n\nEscape: While cell edit open" 
+                                                                                             "to cancel edit\n\nRight-click: On a row to open context menu.\n\nCtrl+f: To search," 
+                                                                                             "click the search icon to toggle between find first and find all mode.\n\nCtrl+r: "
+                                                                                             "To reload data from file.\n\nCtrl+s: To save and overwrite file."))
+        
+        self.helpMenu.add_command(label='Usage Guide', command=lambda: self.buildInfoBox("Usage Guide", "This program allows for the creation of new .csv files (unimplemented),\n" 
+                                                                                         "and the management of existing .csv files.\n\n--Opening Files--\n\n    To begin, open an "
+                                                                                         "existing .csv file by selecting File > Open. After selecting a file, a table containing the " 
+                                                                                         "contents of the\n    file will open. Once a file is open a table containing a specified number "
+                                                                                         "of rows will be displayed, populated with the .csv\n    data. \n\n--Editing Rows--\n\n    Double-clicking "
+                                                                                         "a cell will allow a cell value to be edited. Pressing Escape will cancel editing, while pressing Enter "
+                                                                                         "will confirm\n    the update. \n\n--Adding and Deleting a Row--\n\n    Right-clicking a row will dispay a "
+                                                                                         "context menu providing options such as inserting new rows, and deleting rows."
+                                                                                         "\n\n--Selecting Rows--\n\n    Ctrl+f will display a search field which will allow two kinds"
+                                                                                         "of searching. The default is find all, where all rows containing values\n    matching the search query are"
+                                                                                         "highlighted. Clicking the magnifying glass icon will toggle find first mode. In this "
+                                                                                         "mode, the first\n    row containing a matching Row Id is highlighted. \n\n--Reloading and Saving Data--\n\n    "
+                                                                                         "The toolbar contains other options, some of which have hotkeys (see: Program Hotkeys). Other options include: "
+                                                                                         "Reloading\n    data from the .csv file, and 'overwrite' and 'save as' options."))
         self.appBar.add_cascade(label='Help', menu=self.helpMenu)
         
     def buildCSVTable(self):
@@ -116,10 +132,16 @@ class ProgramWindow:
         self.scrollHor.pack(side="bottom", fill="x")
         
         self.contextMenu = Menu(self.table, tearoff=0)
+        self.contextMenu.add_command(label="View Row Details", state=tk.DISABLED) #Not implemented
+        self.contextMenu.add_command(label="Highlight Row(s)", state=tk.DISABLED) #Not implemented
+        self.contextMenu.add_separator()
+        self.contextMenu.add_command(label="Move Row Up", state=tk.DISABLED) #Not implemented
+        self.contextMenu.add_command(label="Move Row Down", state=tk.DISABLED) #Not implemented
+        self.contextMenu.add_separator()
         self.contextMenu.add_command(label="Add Row Above", command=lambda: self._addDataCallback("above"))
         self.contextMenu.add_command(label="Add Row Below", command=lambda: self._addDataCallback("below"))
         self.contextMenu.add_separator()
-        self.contextMenu.add_command(label="Delete Row", command=lambda: self._deleteRowCallback())
+        self.contextMenu.add_command(label="Delete Row(s)", command=lambda: self._deleteRowCallback()) #Single delete impemented, multi-delete not implemented yet
         
         self.table.bind("<Double-1>", lambda event: self._openTextInputCallback(event))
         self.table.bind("<Button-3>", lambda event: self._openContextMenuCallback(event))
@@ -139,6 +161,7 @@ class ProgramWindow:
         self.closeSearchBoxButton.pack(side=tk.RIGHT) 
         self.searchBox.bind("<KeyRelease>", lambda event: self._searchTableCallback())
         self.searchBox.bind("<Escape>", lambda event: self._showSearchCallback())  
+        self.root.bind("<Configure>", lambda event: self._resizeSearchBoxCallback())
         
     def buildTextEditBox(self, rowId, cellColumn, cellText):
         self.textInput = tk.Entry(self.table)
@@ -155,5 +178,6 @@ class ProgramWindow:
         self.infoLabel.pack(expand=True, padx=10, pady=10)
         self.infoButton = tk.Button(self.infoBox, text="OK", command=lambda: self.infoBox.destroy())
         self.infoButton.pack(pady=10)
+
         
   
