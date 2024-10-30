@@ -41,14 +41,13 @@ class WindowController:
         '''
         Initializes the WindowController, setting up the view and initializing attributes.
         '''
-        self._view = view.ProgramWindow(self.startDaemonThread, self.addData, self.editData, self.deleteData, 
+        self._view = view.ProgramWindow(self.openFile, self.addData, self.editData, self.deleteData, 
                                           self.searchTable, self.showHideSearchBox, self.toggleButton, 
                                           self.openContextMenu, self.openTextInput, self.reloadDataFromFile,
                                           self.saveFile, self.saveFileAs, self.resizeSearchBox, self.openRowDetails)
         self._highestId = 0
         self._searchOpen = False
         self._searchButtonToggle = False
-        self._daemon = threading.Thread(target=self.openFile)
         
     @property
     def model(self):
@@ -287,7 +286,7 @@ class WindowController:
             for child in self._view.table.get_children():
                 self._view.table.delete(child)
                 
-            self.parseCSV(self._file)
+            self.startDaemonThread(self._file)
             self.loadData(0, 354)
         
     def openFile(self):
@@ -299,10 +298,9 @@ class WindowController:
         if not self._file:
             return
         
-        self._view.startLabel.config(text="CSV Loading...")
         self._view.buildCSVTable()
         self._view.buildSearchBox()
-        self.parseCSV(self._file)
+        self.startDaemonThread(self._file)
         self.loadData(0, 354)
         self._view.startLabel.pack_forget()
         self._view.fileMenu.entryconfig(2, state=tk.NORMAL)
@@ -453,10 +451,11 @@ class WindowController:
         index = self._view.table.index(self._view.table.selection()[0])
         self._view.buildInfoBox(f"Details For Row: {rowId}", self._model[index])
         
-    def startDaemonThread(self):
+    def startDaemonThread(self, file):
         '''
         Starts a daemon thread which will open and parse a CSV file. 
         '''
+        self._daemon = threading.Thread(target=self.parseCSV(file))
         self._daemon.daemon = True
         self._daemon.start()
         
