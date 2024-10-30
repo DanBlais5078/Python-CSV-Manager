@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>CST8333ProjectByDanBlais</Name>
     <RootNamespace>CST8333ProjectByDanBlais</RootNamespace>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,6 +24,7 @@
   <ItemGroup>
     <Compile Include="KeystonePipelineData.py" />
     <Compile Include="AppWindow.py" />
+    <Compile Include="test_Multithreading.py" />
     <Compile Include="test_WindowController.py" />
     <Compile Include="WindowController.py" />
   </ItemGroup>

@@ -1,10 +1,16 @@
+#This module defines the Controller for the application. This module is composed of a class which contains methods for
+#processing events from the View and manipulating the Model as needed. This is achieved by maintaining references to both
+#the Model and the View and manipulating both as required. The View instance is instantiated from within this class and is
+#passed the view processing methods of this class to be used as callbacks. 
+
+#Author: Dan Blais - 040826486
+#Subject: CST8333
+#Due Date: October 13, 2024
+
 #Note on code reference: The CodersLegacy reference was loosely followed to learn how to make treeview cells editable.
 #All code in the tutorial was rewritten and modified for this program to fit in an MVC architecture.
 
-#Images
-#Search icon by Icons8, Close icon by Icons8, 1 icon by Icons8
-
-#Code References
+#References
 #[1] Siddiqi, "How to Make Ttk Treeview Editable in Python," CodersLegacy, 2023. [Online]. 
 #            Available: https://coderslegacy.com/how-to-make-ttk-treeview-editable-python/. [Accessed: 24-Sep-2024].
 #[2] "Tkinter Documentation," TkDocs, [Online]. Available: https://tkdocs.com/index.html. [Accessed: 25-Sep-2024].
@@ -14,6 +20,7 @@ import AppWindow as view
 import tkinter as tk
 import itertools as it
 import csv
+import threading
 from datetime import datetime
 
 class WindowController:
@@ -34,13 +41,14 @@ class WindowController:
         '''
         Initializes the WindowController, setting up the view and initializing attributes.
         '''
-        self._view = view.ProgramWindow(self.openFile, self.addData, self.editData, self.deleteData, 
+        self._view = view.ProgramWindow(self.startDaemonThread, self.addData, self.editData, self.deleteData, 
                                           self.searchTable, self.showHideSearchBox, self.toggleButton, 
                                           self.openContextMenu, self.openTextInput, self.reloadDataFromFile,
                                           self.saveFile, self.saveFileAs, self.resizeSearchBox, self.openRowDetails)
         self._highestId = 0
         self._searchOpen = False
         self._searchButtonToggle = False
+        self._daemon = threading.Thread(target=self.openFile)
         
     @property
     def model(self):
@@ -280,7 +288,7 @@ class WindowController:
                 self._view.table.delete(child)
                 
             self.parseCSV(self._file)
-            self.loadData(0, 100)
+            self.loadData(0, 354)
         
     def openFile(self):
         '''
@@ -291,10 +299,11 @@ class WindowController:
         if not self._file:
             return
         
+        self._view.startLabel.config(text="CSV Loading...")
         self._view.buildCSVTable()
         self._view.buildSearchBox()
         self.parseCSV(self._file)
-        self.loadData(0, 100)
+        self.loadData(0, 354)
         self._view.startLabel.pack_forget()
         self._view.fileMenu.entryconfig(2, state=tk.NORMAL)
         self._view.fileMenu.entryconfig(3, state=tk.NORMAL)
@@ -443,6 +452,13 @@ class WindowController:
         rowId = int(self._view.table.selection()[0])
         index = self._view.table.index(self._view.table.selection()[0])
         self._view.buildInfoBox(f"Details For Row: {rowId}", self._model[index])
+        
+    def startDaemonThread(self):
+        '''
+        Starts a daemon thread which will open and parse a CSV file. 
+        '''
+        self._daemon.daemon = True
+        self._daemon.start()
         
 if __name__ == "__main__":
     control = WindowController()

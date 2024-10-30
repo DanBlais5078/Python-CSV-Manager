@@ -1,10 +1,18 @@
+#This module defines the View class of the application. It contains a class which represents the application window, as well
+#as methods which are used to build the various components of the Window. All events are handled through callback methods
+#which pass the event to the Controller module for processing. 
+
+#Author: Dan Blais - 040826486
+#Subject: CST8333
+#Due Date: October 13, 2024
+
 #Note on code reference: The CodersLegacy reference was loosely followed to learn how to make treeview cells editable.
 #All code in the tutorial was rewritten and modified for this program to fit in an MVC architecture.
 
 #Images
 #Search icon by Icons8, Close icon by Icons8, 1 icon by Icons8
 
-#Code References
+#References
 #[1] Siddiqi, "How to Make Ttk Treeview Editable in Python," CodersLegacy, 2023. [Online]. 
 #            Available: https://coderslegacy.com/how-to-make-ttk-treeview-editable-python/. [Accessed: 24-Sep-2024].
 #[2] "Tkinter Documentation," TkDocs, [Online]. Available: https://tkdocs.com/index.html. [Accessed: 25-Sep-2024].
