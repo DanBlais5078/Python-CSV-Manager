@@ -30,8 +30,6 @@ def testStartDaemonThread():
     test_file = "test.csv"
     cont.startDaemonThread(test_file)
 
-    cont._daemon.join()
-
     cont.parseCSV.assert_called_once_with(test_file)
 
     assert cont._daemon.daemon is True

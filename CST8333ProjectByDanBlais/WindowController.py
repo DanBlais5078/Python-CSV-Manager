@@ -455,9 +455,10 @@ class WindowController:
         '''
         Starts a daemon thread which will open and parse a CSV file. 
         '''
-        self._daemon = threading.Thread(target=self.parseCSV(file))
+        self._daemon = threading.Thread(target=self.parseCSV, args=(file,))
         self._daemon.daemon = True
         self._daemon.start()
+        self._daemon.join()
         
 if __name__ == "__main__":
     control = WindowController()
