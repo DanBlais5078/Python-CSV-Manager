@@ -22,6 +22,8 @@ import itertools as it
 import csv
 import threading
 from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class WindowController:
     '''
@@ -44,7 +46,8 @@ class WindowController:
         self._view = view.ProgramWindow(self.openFile, self.addData, self.editData, self.deleteData, 
                                           self.searchTable, self.showHideSearchBox, self.toggleButton, 
                                           self.openContextMenu, self.openTextInput, self.reloadDataFromFile,
-                                          self.saveFile, self.saveFileAs, self.resizeSearchBox, self.openRowDetails)
+                                          self.saveFile, self.saveFileAs, self.resizeSearchBox, self.openRowDetails,
+                                          self.generatePieChart)
         self._highestId = 0
         self._searchOpen = False
         self._searchButtonToggle = False
@@ -306,6 +309,7 @@ class WindowController:
         self._view.fileMenu.entryconfig(2, state=tk.NORMAL)
         self._view.fileMenu.entryconfig(3, state=tk.NORMAL)
         self._view.dataMenu.entryconfig(0, state=tk.NORMAL)
+        self._view.dataMenu.entryconfig(1, state=tk.NORMAL)
     
     def saveFile(self):
         '''
@@ -454,12 +458,74 @@ class WindowController:
     def startDaemonThread(self, file):
         '''
         Starts a daemon thread which will open and parse a CSV file. 
+        
+        :param file: The file to be parsed on the daemon thread.
         '''
         self._daemon = threading.Thread(target=self.parseCSV, args=(file,))
         self._daemon.daemon = True
         self._daemon.start()
         self._daemon.join()
         
+    def generatePieChart(self):
+        '''
+        Generates a pie chart based on a selected categorical column and numerical column. First, 
+        accesses the view object to obtain the selected columns. Then obtains the data for the selected
+        colums from the view object. Next calls a helper method to filter null values and convert numerical
+        column values to a float, as required by matplotlib. Finally, validates the data lists to ensure that 
+        the filteredCategoricalColumnData list contains only String data, and the filteredNumericalColumnData
+        list is not null (if it is null it means conversion failed in the previous step and the column contains
+        categorical values), and then generates a pie chart using the formatted lists using matplotlib.
+        '''
+        #Uses modified code from the following to iterate over a single column of the treeview.
+        #[1] J. P. User, "How to get all values from a column in Treeview in Tkinter using Python?", 
+        #Stack Overflow, Oct. 12, 2019. [Online]. Available: https://stackoverflow.com/questions/63368776/how-to-get-all-values-from-a-column-in-treeview-in-tkinter-using-python. 
+        #[Accessed: Nov. 6, 2024].
+        categoricalColumnData = [self._view.table.item(item)["values"][self._view.table["columns"].index(self._view.categoricalCol.get())] for item in self._view.table.get_children()]
+        numericalColumnData = [self._view.table.item(item)["values"][self._view.table["columns"].index(self._view.numericalCol.get())] for item in self._view.table.get_children()]
+        filteredCategoricalColumnData, filteredNumericalColumnData = self.formatColumnData(categoricalColumnData, numericalColumnData)
+
+        try:
+            list(map(float, filteredCategoricalColumnData))
+            self._view.buildInfoBox("Error", "Categorical column must contain non-numeric data.")
+            return
+        except ValueError:
+            pass 
+
+        if not filteredNumericalColumnData:
+            self._view.buildInfoBox("Error", "Numerical column must contain valid numeric data.")
+            return
+    
+        plt.pie(filteredNumericalColumnData, labels=filteredCategoricalColumnData, autopct='%1.2f%%')
+        plt.axis('equal')
+        plt.show()
+        
+    def formatColumnData(self, categoricalColumnData, numericalColumnData):
+        '''
+        Iterates through both categorical and numerical columns, removing entries 
+        where either the categorical value is null or empty, or the numerical value is invalid 
+        (non-numeric or null). The numerical values are then converted to floats, and the valid 
+        categorical and numerical data are returned as filtered lists.
+
+        :param categoricalColumnData (list): A list of data from the categorical column.
+        :param numericalColumnData (list): A list of data from the numerical column.
+
+        :returns tuple: A tuple containing two lists:
+            - filteredCategoricalData (list): The list of valid categorical data.
+            - filteredNumericalData (list): The list of valid numerical data (as floats).
+        '''
+        filteredCategoricalData = []
+        filteredNumericalData = []
+        
+        for cat, num in zip(categoricalColumnData, numericalColumnData):
+            if cat not in [None, ''] and num not in [None, '']:
+                try:
+                    float(num)
+                    filteredCategoricalData.append(cat)
+                    filteredNumericalData.append(float(num))
+                except ValueError:
+                    continue
+        return filteredCategoricalData, filteredNumericalData
+    
 if __name__ == "__main__":
     control = WindowController()
     control._view.root.mainloop()

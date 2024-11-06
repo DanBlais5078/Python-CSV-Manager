@@ -47,7 +47,7 @@ class ProgramWindow:
     def __init__(self, fileOpenCallback, addDataCallback, editDataCallback, deleteRowCallback, 
                  searchTableCallback, showSearchCallback, toggleButtonCallback, openContextMenuCallback,
                  openTextInputCallback, reloadDataFromFileCallback, saveFileCallback, saveFileAsCallback,
-                 resizeSearchBoxCallback, openRowDetailsCallback):
+                 resizeSearchBoxCallback, openRowDetailsCallback, generatePieChartCallback):
         '''
         Initializes the ProgramWindow class.
 
@@ -83,6 +83,7 @@ class ProgramWindow:
         self._saveFileAsCallback = saveFileAsCallback
         self._resizeSearchBoxCallback = resizeSearchBoxCallback
         self._openRowDetailsCallback = openRowDetailsCallback
+        self._generatePieChartCallback = generatePieChartCallback
         
         self.setupWindow()
 
@@ -149,6 +150,7 @@ class ProgramWindow:
         '''
         self.dataMenu = Menu(appBar, tearoff=0)
         self.dataMenu.add_command(label='Reload Data from File', command=lambda: self._reloadDataFromFileCallback(), state=tk.DISABLED)
+        self.dataMenu.add_command(label='Generate Chart', command=lambda: self.buildChartPopup(), state=tk.DISABLED)
         self.dataMenu.add_command(label='Change Displayed Rows', state=tk.DISABLED) #Not implemented yet.
         self.appBar.add_cascade(label='Data', menu=self.dataMenu)
         
@@ -287,12 +289,39 @@ class ProgramWindow:
         '''
         self.infoBox = tk.Toplevel()
         self.infoBox.title(title)
-        self.infoBox.minsize(width=400, height=200)
         self.infoBox.wm_resizable(False, False)
         self.infoLabel = tk.Label(self.infoBox, anchor="w", justify=tk.LEFT, text=text, wraplength=700)
         self.infoLabel.pack(fill="x" , padx=10, pady=10)
         self.infoButton = tk.Button(self.infoBox, text="OK", command=lambda: self.infoBox.destroy())
         self.infoButton.pack(pady=(0, 10))
+        
+    def buildChartPopup(self):
+        '''
+        Builds a popup window for selecting two columns from a loaded dataset. Provides a button which
+        calls back to the controller class to generate a pie chart when clicked.
+        '''
+        columns = self.table["columns"]
+        
+        self.chartPopup = tk.Toplevel(self.root)
+        self.chartPopup.title("Generate Pie Chart")
+        self.chartPopup.geometry("300x200")
+        
+        self.categoricalCol = tk.StringVar(self.chartPopup)
+        self.categoricalCol.set(columns[0])
+        self.categoricalLabel = tk.Label(self.chartPopup, text="Categorical Column");
+        self.categoricalLabel.pack()
+        self.categoricalColMenu = ttk.Combobox(self.chartPopup, textvariable=self.categoricalCol, values=columns)
+        self.categoricalColMenu.pack(pady=10)
+        
+        self.numericalCol = tk.StringVar(self.chartPopup)
+        self.numericalCol.set(columns[1])
+        self.numericalLabel = tk.Label(self.chartPopup, text="Numerical Column");
+        self.numericalLabel.pack()
+        self.numericalColMenu = ttk.Combobox(self.chartPopup, textvariable=self.numericalCol, values=columns)
+        self.numericalColMenu.pack(pady=10)
+
+        self.generateButton = tk.Button(self.chartPopup, text="Generate Chart", command=lambda: self._generatePieChartCallback())
+        self.generateButton.pack(pady=10)
 
         
   
